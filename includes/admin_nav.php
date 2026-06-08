@@ -8,6 +8,7 @@ $navItems = [
     'index' => ['icon' => '📊', 'label' => t('dashboard')],
     'logs' => ['icon' => '📋', 'label' => t('history')],
     'users' => ['icon' => '👥', 'label' => t('admin')],
+    'settings' => ['icon' => '⚙️', 'label' => t('settings')],
 ];
 ?>
 <!-- Desktop Sidebar -->

@@ -11,6 +11,7 @@
     "export": "Export",
     "calendar": "Calendar",
     "analytics": "Analytics",
+    "settings": "Settings",
     "error_invalid": "Invalid username or password",
     "error_locked": "Too many attempts. Please try again later.",
     "error_db": "Database error",
