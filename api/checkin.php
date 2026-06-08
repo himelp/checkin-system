@@ -5,6 +5,7 @@
 
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/lang.php';
+require_once __DIR__ . '/../includes/sheets.php';
 require_once __DIR__ . '/../config.php';
 
 // Set content type
@@ -52,25 +53,17 @@ $stmt->execute([$userId, $now, $date, $ip]);
 
 $checkinId = $db->lastInsertId();
 
-// Post to Google Apps Script webhook
-$webhookData = [
-    'action' => 'checkin',
-    'user_id' => $userId,
+// Send to Google Sheets (non-blocking, failures logged but not thrown)
+$sheetsData = [
+    'row_id' => $checkinId,
     'name' => $_SESSION['name'],
-    'checkin_time' => $now,
+    'username' => $_SESSION['username'],
     'date' => $date,
-    'row_id' => $checkinId
+    'checkin_time' => $now,
+    'ip' => $ip
 ];
 
-// Send to webhook (non-blocking)
-$ch = curl_init(GOOGLE_SCRIPT_WEBHOOK_URL);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($webhookData));
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-curl_exec($ch);
-curl_close($ch);
+sendToSheets('checkin', $sheetsData);
 
 echo json_encode([
     'success' => true,

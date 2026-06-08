@@ -5,6 +5,7 @@
 
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/lang.php';
+require_once __DIR__ . '/../includes/sheets.php';
 require_once __DIR__ . '/../config.php';
 
 // Set content type
@@ -64,28 +65,15 @@ $formattedDuration .= $minutes . 'min';
 $stmt = $db->prepare("UPDATE check_log SET checkout_time = NOW(), duration_minutes = ?, status = 'done', ip_address = ? WHERE id = ?");
 $stmt->execute([$durationMinutes, $ip, $checkin['id']]);
 
-// Post to Google Apps Script webhook
-$webhookData = [
-    'action' => 'checkout',
-    'user_id' => $userId,
-    'name' => $_SESSION['name'],
-    'checkin_time' => $checkin['checkin_time'],
+// Send to Google Sheets (non-blocking, failures logged but not thrown)
+$sheetsData = [
+    'row_id' => $checkin['id'],
     'checkout_time' => $checkoutTime->format('Y-m-d H:i:s'),
     'duration_minutes' => $durationMinutes,
-    'duration_formatted' => $formattedDuration,
-    'date' => $checkin['date'],
-    'row_id' => $checkin['id']
+    'duration_formatted' => $formattedDuration
 ];
 
-// Send to webhook (non-blocking)
-$ch = curl_init(GOOGLE_SCRIPT_WEBHOOK_URL);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($webhookData));
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-curl_exec($ch);
-curl_close($ch);
+sendToSheets('checkout', $sheetsData);
 
 echo json_encode([
     'success' => true,
