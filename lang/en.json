@@ -55,5 +55,6 @@
     "days_present": "Days Present",
     "days_absent": "Days Absent",
     "weekly_comparison": "Weekly Comparison",
-    "hours": "Hours"
+    "hours": "Hours",
+    "login_subtitle": "Sign in to your account"
 }

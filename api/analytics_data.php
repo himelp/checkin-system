@@ -57,7 +57,7 @@ try {
         SELECT 
             DATE(checkin_time) as date,
             SUM(duration_minutes) as total_minutes
-        FROM attendance 
+        FROM check_log 
         $conditions
         GROUP BY DATE(checkin_time)
         ORDER BY date ASC
@@ -83,7 +83,7 @@ try {
             COALESCE(SUM(duration_minutes), 0) as total_minutes,
             COUNT(DISTINCT DATE(checkin_time)) as days_present,
             MAX(duration_minutes) as longest_session_minutes
-        FROM attendance 
+        FROM check_log 
         $conditions
     ";
     
@@ -127,7 +127,7 @@ try {
     // This week hours
     $sql = "
         SELECT COALESCE(SUM(duration_minutes), 0) as total_minutes
-        FROM attendance 
+        FROM check_log 
         WHERE DATE(checkin_time) BETWEEN :this_week_start AND :this_week_end
     ";
     
@@ -149,7 +149,7 @@ try {
     // Last week hours
     $sql = "
         SELECT COALESCE(SUM(duration_minutes), 0) as total_minutes
-        FROM attendance 
+        FROM check_log 
         WHERE DATE(checkin_time) BETWEEN :last_week_start AND :last_week_end
     ";
     

@@ -60,7 +60,7 @@ try {
                 WHEN MAX(checkin_time) IS NOT NULL THEN 'checkin_only'
                 ELSE 'absent'
             END as status
-        FROM attendance 
+        FROM check_log 
         WHERE DATE(checkin_time) BETWEEN :first_day AND :last_day
     ";
     
