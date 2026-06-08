@@ -1,0 +1,13 @@
+# Deny access if installed.lock exists
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{DOCUMENT_ROOT}/install/installed.lock -f
+    RewriteRule ^(.*)$ /index.php [R=302,L]
+</IfModule>
+
+# Fallback for servers without mod_rewrite
+<IfModule !mod_rewrite.c>
+    <If "-f %{DOCUMENT_ROOT}/install/installed.lock">
+        Deny from all
+    </If>
+</IfModule>

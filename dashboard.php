@@ -3,8 +3,15 @@
  * Dashboard Page
  */
 
+// Redirect to installer if not installed
+if (!file_exists(__DIR__ . '/install/installed.lock')) {
+    header('Location: install.php');
+    exit;
+}
+
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/lang.php';
+require_once __DIR__ . '/config.php';
 
 // Redirect if not logged in
 if (!isLoggedIn()) {
@@ -56,7 +63,7 @@ $csrfToken = generateCSRFToken();
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-4xl mx-auto p-4 space-y-6">
+    <main class="max-w-4xl mx-auto p-4 space-y-6 pb-24">
         <!-- Check-in/out Section -->
         <div id="checkinSection" class="bg-white rounded-xl shadow-lg p-6 sm:p-8 text-center">
             <!-- Initial state - will be updated by JS -->
@@ -116,6 +123,18 @@ $csrfToken = generateCSRFToken();
             </div>
         </div>
     </main>
+
+    <!-- Developer Footer -->
+    <?php if (defined('SHOW_DEV_FOOTER') && SHOW_DEV_FOOTER): ?>
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 px-4">
+        <div class="max-w-4xl mx-auto flex items-center justify-center gap-2 text-xs text-gray-500">
+            <span>Developed by</span>
+            <a href="<?php echo DEV_WEBSITE; ?>" target="_blank" class="text-blue-600 hover:underline font-medium"><?php echo DEV_NAME; ?></a>
+            <span class="text-gray-300">|</span>
+            <span><?php echo DEV_COMPANY; ?></span>
+        </div>
+    </footer>
+    <?php endif; ?>
 
     <!-- Toast Container -->
     <div id="toastContainer" class="fixed top-20 left-1/2 -translate-x-1/2 z-50"></div>

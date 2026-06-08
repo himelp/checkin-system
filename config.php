@@ -23,3 +23,10 @@ define('APP_NAME', 'CheckTrack');
 
 // Default language
 define('DEFAULT_LANG', 'en');
+
+// Developer Information
+define('DEV_NAME', 'Md Minhaz Bin Santo');
+define('DEV_COMPANY', 'Beenet IT Solutions');
+define('DEV_WEBSITE', 'https://minhazbinsanto.com');
+define('DEV_EMAIL', 'contact@minhazbinsanto.com');
+define('SHOW_DEV_FOOTER', true);
