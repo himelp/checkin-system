@@ -1,14 +1,14 @@
 <?php
 /**
- * Login Page
+ * Admin Dashboard
  */
 
-require_once __DIR__ . '/includes/auth.php';
-require_once __DIR__ . '/includes/lang.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/lang.php';
 
-// Redirect if already logged in
-if (isLoggedIn()) {
-    header('Location: dashboard.php');
+// Redirect if not admin
+if (!isAdmin()) {
+    header('Location: ../index.php');
     exit;
 }
 
@@ -19,7 +19,7 @@ $csrfToken = generateCSRFToken();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo APP_NAME; ?> - <?php echo t('login'); ?></title>
+    <title><?php echo APP_NAME; ?> - <?php echo t('admin'); ?> <?php echo t('dashboard'); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .toast {
@@ -31,138 +31,195 @@ $csrfToken = generateCSRFToken();
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
-    <!-- Language Toggle -->
-    <div class="absolute top-4 right-4">
-        <button id="langToggle" class="px-4 py-2 bg-white rounded-lg shadow text-sm font-medium text-gray-700 hover:bg-gray-50 min-h-[44px] min-w-[44px]">
-            <?php echo ($_SESSION['lang'] ?? DEFAULT_LANG) === 'en' ? 'IT' : 'EN'; ?>
-        </button>
-    </div>
+<body class="bg-gray-100 min-h-screen">
+    <?php include __DIR__ . '/../includes/admin_nav.php'; ?>
 
     <!-- Main Content -->
-    <div class="flex-1 flex items-center justify-center p-4">
-        <div class="w-full max-w-md">
-            <!-- App Name -->
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-blue-600"><?php echo APP_NAME; ?></h1>
+    <main class="lg:ml-64 pb-20 lg:pb-8">
+        <div class="max-w-6xl mx-auto p-4 space-y-6">
+            <!-- Page Header -->
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-gray-800"><?php echo t('admin'); ?> <?php echo t('dashboard'); ?></h1>
+                <span class="text-sm text-gray-500"><?php echo date('d/m/Y H:i'); ?></span>
             </div>
 
-            <!-- Login Card -->
-            <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center"><?php echo t('login'); ?></h2>
-                
-                <form id="loginForm" class="space-y-4">
-                    <input type="hidden" name="csrf_token" id="csrfToken" value="<?php echo $csrfToken; ?>">
-                    
-                    <!-- Username -->
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1"><?php echo t('username'); ?></label>
-                        <input type="text" id="username" name="username" required 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[44px]"
-                            placeholder="<?php echo t('username'); ?>">
-                    </div>
-
-                    <!-- Password -->
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1"><?php echo t('password'); ?></label>
-                        <div class="relative">
-                            <input type="password" id="password" name="password" required 
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-12 min-h-[44px]"
-                                placeholder="<?php echo t('password'); ?>">
-                            <button type="button" id="togglePassword" 
-                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 min-h-[44px] min-w-[44px] flex items-center justify-center">
-                                <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                </svg>
-                                <svg id="eyeOffIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
-                                </svg>
-                            </button>
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Total Users -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span class="text-2xl">👥</span>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Total Users</p>
+                            <p id="totalUsers" class="text-2xl font-bold text-gray-800">--</p>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Submit Button -->
-                    <button type="submit" id="submitBtn"
-                        class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 min-h-[44px]">
-                        <?php echo t('login'); ?>
-                    </button>
-                </form>
+                <!-- Checked In Now -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <span class="text-2xl">✅</span>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Checked In Now</p>
+                            <p id="currentCheckins" class="text-2xl font-bold text-green-600">--</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today Hours -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <span class="text-2xl">⏱️</span>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Today Hours</p>
+                            <p id="todayHours" class="text-2xl font-bold text-purple-600">--</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Month Hours -->
+                <div class="bg-white rounded-xl shadow p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <span class="text-2xl">📅</span>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Month Hours</p>
+                            <p id="monthHours" class="text-2xl font-bold text-orange-600">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Status Table -->
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-700">Currently Checked In</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check-in Time</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activeList" class="divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="3" class="px-4 py-8 text-center text-gray-500">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-700">Recent Activity</h2>
+                </div>
+                <div id="recentActivity" class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                    <div class="p-4 text-center text-gray-500">Loading...</div>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <!-- Toast Container -->
-    <div id="toastContainer" class="fixed top-4 left-1/2 -translate-x-1/2 z-50"></div>
+    <div id="toastContainer" class="fixed top-4 right-4 z-50"></div>
 
-    <script src="assets/app.js"></script>
+    <script src="../assets/app.js"></script>
     <script>
-        // Password toggle
-        document.getElementById('togglePassword').addEventListener('click', function() {
-            const passwordInput = document.getElementById('password');
-            const eyeIcon = document.getElementById('eyeIcon');
-            const eyeOffIcon = document.getElementById('eyeOffIcon');
-            
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                eyeIcon.classList.add('hidden');
-                eyeOffIcon.classList.remove('hidden');
-            } else {
-                passwordInput.type = 'password';
-                eyeIcon.classList.remove('hidden');
-                eyeOffIcon.classList.add('hidden');
-            }
-        });
-
-        // Login form submission
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.textContent;
-            submitBtn.disabled = true;
-            submitBtn.textContent = '...';
-            
-            const data = {
-                username: document.getElementById('username').value,
-                password: document.getElementById('password').value,
-                csrf_token: document.getElementById('csrfToken').value
-            };
-            
+        // Load stats
+        async function loadStats() {
             try {
-                const result = await postJSON('api/login.php', data);
+                const response = await fetch('api/stats.php');
+                const data = await response.json();
                 
-                if (result.success) {
-                    showToast(result.message, 'success');
-                    setTimeout(() => {
-                        window.location.href = result.redirect;
-                    }, 500);
-                } else {
-                    showToast(result.message, 'error');
-                    // Update CSRF token if provided
-                    if (result.csrf_token) {
-                        document.getElementById('csrfToken').value = result.csrf_token;
-                    }
+                if (data.success) {
+                    // Update stat cards
+                    document.getElementById('totalUsers').textContent = data.total_users;
+                    document.getElementById('currentCheckins').textContent = data.current_checkins;
+                    document.getElementById('todayHours').textContent = formatHours(data.today_hours);
+                    document.getElementById('monthHours').textContent = formatHours(data.month_hours);
+                    
+                    // Update active list
+                    updateActiveList(data.active_list);
+                    
+                    // Update recent activity
+                    updateRecentActivity(data.recent_activity);
                 }
             } catch (error) {
-                showToast('Network error', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
+                console.error('Failed to load stats:', error);
+                showToast('Failed to load stats', 'error');
             }
-        });
+        }
 
-        // Language toggle
-        document.getElementById('langToggle').addEventListener('click', async function() {
-            try {
-                const result = await postJSON('api/set_language.php', {});
-                if (result.success) {
-                    location.reload();
-                }
-            } catch (error) {
-                showToast('Failed to change language', 'error');
+        function formatHours(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        }
+
+        function updateActiveList(list) {
+            const tbody = document.getElementById('activeList');
+            
+            if (!list || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-gray-500">No one is currently checked in</td></tr>`;
+                return;
             }
-        });
+            
+            tbody.innerHTML = list.map(item => `
+                <tr>
+                    <td class="px-4 py-3 text-sm font-medium text-gray-900">${escapeHtml(item.name)}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">${item.checkin_time}</td>
+                    <td class="px-4 py-3 text-sm text-blue-600 font-mono">${item.duration_so_far}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateRecentActivity(list) {
+            const container = document.getElementById('recentActivity');
+            
+            if (!list || list.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-gray-500">No recent activity</div>`;
+                return;
+            }
+            
+            container.innerHTML = list.map(item => {
+                const icon = item.action === 'checkin' ? '🟢' : '🔴';
+                const actionText = item.action === 'checkin' ? 'checked in' : 'checked out';
+                return `
+                    <div class="p-4 flex items-center gap-3">
+                        <span class="text-xl">${icon}</span>
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-800"><strong>${escapeHtml(item.name)}</strong> ${actionText}</p>
+                            <p class="text-xs text-gray-500">${item.time}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadStats, 30000);
+
+        // Initial load
+        loadStats();
     </script>
 </body>
 </html>
