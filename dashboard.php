@@ -2,6 +2,7 @@
 /**
  * Dashboard Page
  */
+ob_start();
 
 // Redirect to installer if not installed
 if (!file_exists(__DIR__ . '/install/installed.lock')) {
@@ -11,7 +12,10 @@ if (!file_exists(__DIR__ . '/install/installed.lock')) {
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/lang.php';
+require_once __DIR__ . '/includes/security.php';
 require_once __DIR__ . '/config.php';
+
+secureHeaders();
 
 // Redirect if not logged in
 if (!isLoggedIn()) {
@@ -26,6 +30,10 @@ $csrfToken = generateCSRFToken();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.json">
     <title><?php echo APP_NAME; ?> - <?php echo t('dashboard'); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
