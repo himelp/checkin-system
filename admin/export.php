@@ -164,9 +164,9 @@ if ($format === 'csv') {
         <div class="header">
             <h1>CheckTrack Attendance Report</h1>
             <p>
-                <?php if ($dateFrom || $DateTo): ?>
+                <?php if ($dateFrom || $dateTo): ?>
                     Period: <?php echo $dateFrom ?: 'Start'; ?> to <?php echo $dateTo ?: 'End'; ?>
-                <?php else ?>
+                <?php else: ?>
                     All Records
                 <?php endif; ?>
             </p>
