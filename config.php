@@ -25,7 +25,8 @@ define('APP_NAME', 'CheckTrack');
 define('DEFAULT_LANG', 'en');
 
 // Default Timezone
-date_default_timezone_set('UTC');
+define('DEFAULT_TIMEZONE', 'UTC');
+date_default_timezone_set(DEFAULT_TIMEZONE);
 
 // Developer Information
 define('DEV_NAME', 'Md Minhaz Bin Santo');
