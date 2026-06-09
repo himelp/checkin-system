@@ -34,6 +34,21 @@ CREATE TABLE `login_attempts` (
     INDEX `idx_ip_time` (`ip_address`, `attempted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Messages table
+CREATE TABLE `messages` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `sender_id` INT NOT NULL,
+    `receiver_id` INT NOT NULL,
+    `subject` VARCHAR(255) NOT NULL,
+    `body` TEXT NOT NULL,
+    `is_read` TINYINT(1) DEFAULT 0,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    INDEX `idx_receiver` (`receiver_id`, `is_read`),
+    INDEX `idx_sender` (`sender_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Insert default admin user (password: admin123)
 INSERT INTO `users` (`name`, `username`, `password`, `role`, `lang`, `timezone`, `status`) VALUES
 ('Administrator', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'en', 'UTC', 1);

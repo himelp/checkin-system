@@ -63,7 +63,11 @@ $csrfToken = generateCSRFToken();
             <h1 class="text-xl font-bold text-blue-600"><?php echo APP_NAME; ?></h1>
             <div class="flex items-center gap-2 sm:gap-4">
                 <span class="text-gray-600 text-sm hidden sm:inline"><?php echo htmlspecialchars($_SESSION['name']); ?></span>
-                <a href="profile.php" class="px-3 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-200 min-h-[44px] flex items-center">
+                <a href="messages.php" class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 min-h-[44px] flex items-center gap-1 relative">
+                    <?php echo t('messages'); ?>
+                    <span id="navUnreadBadge" class="hidden bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center">0</span>
+                </a>
+                <a href="profile.php" class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 min-h-[44px] flex items-center">
                     <?php echo t('profile'); ?>
                 </a>
                 <button id="langToggle" class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 min-h-[44px] min-w-[44px]">
@@ -303,11 +307,32 @@ $csrfToken = generateCSRFToken();
             }
         });
 
+        // Update unread message count
+        async function updateUnreadCount() {
+            try {
+                const response = await fetch('api/messages.php?action=get_unread_count');
+                const data = await response.json();
+                const badge = document.getElementById('navUnreadBadge');
+                if (data.count > 0) {
+                    badge.textContent = data.count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Failed to get unread count:', error);
+            }
+        }
+
         // Auto-refresh every 30 seconds
-        setInterval(loadStatus, 30000);
+        setInterval(() => {
+            loadStatus();
+            updateUnreadCount();
+        }, 30000);
 
         // Initial load
         loadStatus();
+        updateUnreadCount();
     </script>
 </body>
 </html>

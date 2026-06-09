@@ -65,5 +65,20 @@
     "confirm_password": "Confirm Password",
     "save_changes": "Save Changes",
     "preferences": "Preferences",
-    "force_checkout": "Force Checkout"
+    "force_checkout": "Force Checkout",
+    "messages": "Messages",
+    "inbox": "Inbox",
+    "sent": "Sent",
+    "compose": "Compose",
+    "subject": "Subject",
+    "message_body": "Message",
+    "send_message": "Send Message",
+    "reply": "Reply",
+    "delete": "Delete",
+    "mark_read": "Mark as Read",
+    "unread": "Unread",
+    "no_messages": "No messages",
+    "message_sent": "Message sent successfully",
+    "to": "To",
+    "from": "From"
 }
