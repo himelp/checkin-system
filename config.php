@@ -24,6 +24,9 @@ define('APP_NAME', 'CheckTrack');
 // Default language
 define('DEFAULT_LANG', 'en');
 
+// Default Timezone
+date_default_timezone_set('UTC');
+
 // Developer Information
 define('DEV_NAME', 'Md Minhaz Bin Santo');
 define('DEV_COMPANY', 'Beenet IT Solutions');
