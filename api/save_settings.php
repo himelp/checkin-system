@@ -92,7 +92,7 @@ function handleSheetsUrl(&$configContent, $input) {
     $url = str_replace("'", "\\'", $url);
     
     // Replace GOOGLE_SCRIPT_WEBHOOK_URL definition
-    // Use a more specific regex to avoid matching comments or multiple definitions
+    // Use a more specific regex to avoid matching comment or multiple definitions
     $pattern = "/define\s*\(\s*['\"]GOOGLE_SCRIPT_WEBHOOK_URL['\"]\s*,\s*['\"].*?['\"]\s*\)\s*;/";
     $replacement = "define('GOOGLE_SCRIPT_WEBHOOK_URL', '" . $url . "');";
     
