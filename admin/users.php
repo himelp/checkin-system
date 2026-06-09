@@ -117,7 +117,7 @@ if ($db) {
             <div class="p-6 border-b">
                 <h2 id="modalTitle" class="text-xl font-semibold">Add User</h2>
             </div>
-            <form id="userForm" action="../api/create_user.php" method="POST" class="p-6 space-y-4">
+            <form id="userForm" class="p-6 space-y-4">
                 <input type="hidden" id="userId" value="">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                 
@@ -225,7 +225,7 @@ if ($db) {
                 data.password = document.getElementById('userPassword').value;
             } else {
                 data.action = 'edit';
-                data.user_id = userId;
+                data.user_id = parseInt(userId);
             }
             
             try {

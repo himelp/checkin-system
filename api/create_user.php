@@ -28,6 +28,43 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 
+$action = sanitizeInput($input['action'] ?? 'add');
+
+// Handle edit action
+if ($action === 'edit') {
+    $userId = intval($input['user_id'] ?? 0);
+    $name = sanitizeInput($input['name'] ?? '');
+    $role = sanitizeInput($input['role'] ?? 'user');
+
+    if (empty($name)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Name is required']);
+        exit;
+    }
+
+    if (!in_array($role, ['user', 'admin'])) {
+        $role = 'user';
+    }
+
+    $db = getDB();
+    if (!$db) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database error']);
+        exit;
+    }
+
+    $stmt = $db->prepare("UPDATE users SET name = ?, role = ? WHERE id = ?");
+    try {
+        $stmt->execute([$name, $role, $userId]);
+        echo json_encode(['success' => true, 'message' => 'User updated successfully']);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to update user']);
+    }
+    exit;
+}
+
+// Handle add action (default)
 $username = sanitizeInput($input['username'] ?? '');
 $password = $input['password'] ?? '';
 $name = sanitizeInput($input['name'] ?? '');
@@ -89,6 +126,11 @@ try {
         'user_id' => $newUserId
     ]);
 } catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Failed to create user']);
+    if ($e->getCode() == 23000) {
+        http_response_code(409);
+        echo json_encode(['success' => false, 'message' => 'Username already exists']);
+    } else {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to create user']);
+    }
 }
