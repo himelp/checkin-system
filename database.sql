@@ -6,6 +6,7 @@ CREATE TABLE `users` (
     `password` VARCHAR(255) NOT NULL,
     `role` ENUM('admin', 'user') NOT NULL DEFAULT 'user',
     `lang` VARCHAR(10) NOT NULL DEFAULT 'en',
+    `timezone` VARCHAR(50) NOT NULL DEFAULT 'UTC',
     `status` TINYINT(1) NOT NULL DEFAULT 1,
     `last_login` DATETIME NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -34,5 +35,5 @@ CREATE TABLE `login_attempts` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Insert default admin user (password: admin123)
-INSERT INTO `users` (`name`, `username`, `password`, `role`, `lang`, `status`) VALUES
-('Administrator', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'en', 1);
+INSERT INTO `users` (`name`, `username`, `password`, `role`, `lang`, `timezone`, `status`) VALUES
+('Administrator', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'en', 'UTC', 1);

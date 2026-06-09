@@ -24,19 +24,25 @@ function startSecureSession() {
  */
 function isLoggedIn() {
     startSecureSession();
-    
+
     if (!isset($_SESSION['user_id'])) {
         return false;
     }
-    
+
     // Check session timeout
     if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > SESSION_TIMEOUT)) {
         session_unset();
         session_destroy();
         return false;
     }
-    
+
     $_SESSION['last_activity'] = time();
+
+    // Apply user timezone
+    if (isset($_SESSION['timezone'])) {
+        date_default_timezone_set($_SESSION['timezone']);
+    }
+
     return true;
 }
 
@@ -54,11 +60,11 @@ function isAdmin() {
  */
 function generateCSRFToken() {
     startSecureSession();
-    
+
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
-    
+
     return $_SESSION['csrf_token'];
 }
 
@@ -69,11 +75,11 @@ function generateCSRFToken() {
  */
 function verifyCSRFToken($token) {
     startSecureSession();
-    
+
     if (empty($_SESSION['csrf_token']) || empty($token)) {
         return false;
     }
-    
+
     return hash_equals($_SESSION['csrf_token'], $token);
 }
 
@@ -85,24 +91,24 @@ function verifyCSRFToken($token) {
 function checkRateLimit($ip) {
     $db = getDB();
     if (!$db) return false;
-    
+
     // Clean old attempts (older than 10 minutes)
     $stmt = $db->prepare("DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)");
     $stmt->execute();
-    
+
     // Count recent attempts
     $stmt = $db->prepare("SELECT COUNT(*) as attempts FROM login_attempts WHERE ip_address = ? AND attempted_at > DATE_SUB(NOW(), INTERVAL 10 MINUTE)");
     $stmt->execute([$ip]);
     $result = $stmt->fetch();
-    
+
     if ($result['attempts'] >= 5) {
         return false;
     }
-    
+
     // Log attempt
     $stmt = $db->prepare("INSERT INTO login_attempts (ip_address) VALUES (?)");
     $stmt->execute([$ip]);
-    
+
     return true;
 }
 
@@ -117,38 +123,42 @@ function loginUser($username, $password) {
     if (!$db) {
         return ['success' => false, 'message' => t('error_db')];
     }
-    
+
     $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-    
+
     // Check rate limit
     if (!checkRateLimit($ip)) {
         return ['success' => false, 'message' => t('error_locked')];
     }
-    
+
     // Get user
     $stmt = $db->prepare("SELECT * FROM users WHERE username = ? AND status = 1");
     $stmt->execute([$username]);
     $user = $stmt->fetch();
-    
+
     if (!$user || !password_verify($password, $user['password'])) {
         return ['success' => false, 'message' => t('error_invalid')];
     }
-    
+
     // Start session
     startSecureSession();
     session_regenerate_id(true);
-    
+
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['name'] = $user['name'];
     $_SESSION['username'] = $user['username'];
     $_SESSION['role'] = $user['role'];
     $_SESSION['lang'] = $user['lang'];
+    $_SESSION['timezone'] = $user['timezone'];
     $_SESSION['last_activity'] = time();
-    
+
+    // Set user timezone
+    date_default_timezone_set($_SESSION['timezone']);
+
     // Update last login
     $stmt = $db->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
     $stmt->execute([$user['id']]);
-    
+
     return ['success' => true, 'message' => t('success_login')];
 }
 

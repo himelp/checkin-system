@@ -63,6 +63,9 @@ $csrfToken = generateCSRFToken();
             <h1 class="text-xl font-bold text-blue-600"><?php echo APP_NAME; ?></h1>
             <div class="flex items-center gap-2 sm:gap-4">
                 <span class="text-gray-600 text-sm hidden sm:inline"><?php echo htmlspecialchars($_SESSION['name']); ?></span>
+                <a href="profile.php" class="px-3 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-200 min-h-[44px] flex items-center">
+                    <?php echo t('profile'); ?>
+                </a>
                 <button id="langToggle" class="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 min-h-[44px] min-w-[44px]">
                     <?php echo ($_SESSION['lang'] ?? DEFAULT_LANG) === 'en' ? 'IT' : 'EN'; ?>
                 </button>
@@ -86,7 +89,7 @@ $csrfToken = generateCSRFToken();
             <!-- Checked Out State -->
             <div id="checkedOutState" class="hidden">
                 <p class="text-gray-600 mb-6"><?php echo t('welcome'); ?>, <?php echo htmlspecialchars($_SESSION['name']); ?>!</p>
-                <button id="checkinBtn" 
+                <button id="checkinBtn"
                     class="w-full max-w-xs mx-auto py-6 px-8 bg-green-500 hover:bg-green-600 text-white text-xl font-bold rounded-xl shadow-lg transition duration-200 min-h-[88px] pulse-animation">
                     <?php echo t('checkin'); ?>
                 </button>
@@ -96,7 +99,7 @@ $csrfToken = generateCSRFToken();
             <div id="checkedInState" class="hidden">
                 <p class="text-gray-600 mb-2"><?php echo t('currently_checkin'); ?></p>
                 <div id="timer" class="text-4xl sm:text-5xl font-mono font-bold text-blue-600 mb-6">00:00:00</div>
-                <button id="checkoutBtn" 
+                <button id="checkoutBtn"
                     class="w-full max-w-xs mx-auto py-6 px-8 bg-red-500 hover:bg-red-600 text-white text-xl font-bold rounded-xl shadow-lg transition duration-200 min-h-[88px]">
                     <?php echo t('checkout'); ?>
                 </button>
@@ -160,23 +163,23 @@ $csrfToken = generateCSRFToken();
             try {
                 const response = await fetch('api/status.php');
                 const data = await response.json();
-                
+
                 document.getElementById('loadingState').classList.add('hidden');
-                
+
                 if (data.is_checkedin) {
                     showCheckedIn(data.checkin_time);
                 } else {
                     showCheckedOut();
                 }
-                
+
                 // Update today total
                 const hours = Math.floor(data.today_total_minutes / 60);
                 const minutes = data.today_total_minutes % 60;
                 document.getElementById('todayTotal').textContent = `${hours}h ${minutes}min`;
-                
+
                 // Update history
                 updateHistory(data.history);
-                
+
             } catch (error) {
                 console.error('Failed to load status:', error);
                 showToast('Failed to load status', 'error');
@@ -202,22 +205,22 @@ $csrfToken = generateCSRFToken();
 
         function updateHistory(history) {
             const tbody = document.getElementById('historyBody');
-            
+
             if (!history || history.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500"><?php echo t('no_records'); ?></td></tr>`;
                 return;
             }
-            
+
             tbody.innerHTML = history.map(row => {
                 const date = new Date(row.date).toLocaleDateString();
                 const checkin = row.checkin_time ? row.checkin_time.split(' ')[1].substring(0, 5) : '--';
                 const checkout = row.checkout_time ? row.checkout_time.split(' ')[1].substring(0, 5) : '--';
                 const duration = row.duration_minutes ? formatDuration(row.duration_minutes) : '--';
-                const statusClass = row.status === 'active' 
-                    ? 'bg-green-100 text-green-800' 
+                const statusClass = row.status === 'active'
+                    ? 'bg-green-100 text-green-800'
                     : 'bg-gray-100 text-gray-800';
                 const statusText = row.status === 'active' ? '<?php echo t('status_active'); ?>' : '<?php echo t('status_done'); ?>';
-                
+
                 return `
                     <tr>
                         <td class="px-4 py-3 text-sm text-gray-900">${date}</td>
@@ -243,10 +246,10 @@ $csrfToken = generateCSRFToken();
             const btn = this;
             btn.disabled = true;
             btn.textContent = '...';
-            
+
             try {
                 const result = await postJSON('api/checkin.php', {});
-                
+
                 if (result.success) {
                     showToast(result.message, 'success');
                     showCheckedIn(result.checkin_time);
@@ -265,14 +268,14 @@ $csrfToken = generateCSRFToken();
         // Check-out button
         document.getElementById('checkoutBtn').addEventListener('click', async function() {
             if (!confirm('<?php echo t('confirm_checkout'); ?>')) return;
-            
+
             const btn = this;
             btn.disabled = true;
             btn.textContent = '...';
-            
+
             try {
                 const result = await postJSON('api/checkout.php', {});
-                
+
                 if (result.success) {
                     showToast(result.message, 'success');
                     showCheckedOut();

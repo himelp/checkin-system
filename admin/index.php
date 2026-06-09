@@ -169,11 +169,12 @@ $csrfToken = generateCSRFToken();
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Time</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="activeListBody" class="divide-y divide-gray-200">
                                 <tr>
-                                    <td colspan="3" class="px-4 py-8 text-center text-gray-500">No active check-ins</td>
+                                    <td colspan="4" class="px-4 py-8 text-center text-gray-500">No active check-ins</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -210,26 +211,48 @@ $csrfToken = generateCSRFToken();
     <div id="toastContainer" class="fixed top-20 left-1/2 -translate-x-1/2 z-50"></div>
 
     <script>
+        // Force checkout
+        async function forceCheckout(userId, userName) {
+            if (!confirm('Force checkout for ' + userName + '?')) return;
+
+            try {
+                const response = await fetch('api/force_checkout.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'user_id=' + encodeURIComponent(userId)
+                });
+                const data = await response.json();
+
+                showToast(data.message, data.success ? 'success' : 'error');
+
+                if (data.success) {
+                    loadStats();
+                }
+            } catch (error) {
+                showToast('Network error', 'error');
+            }
+        }
+
         // Load stats
         async function loadStats() {
             try {
                 const response = await fetch('api/stats.php');
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // Update stat cards
                     document.getElementById('statTotalUsers').textContent = data.total_users;
                     document.getElementById('statCurrentCheckins').textContent = data.current_checkins;
-                    
+
                     // Format hours
                     const todayHours = Math.floor(data.today_hours / 60);
                     const todayMins = data.today_hours % 60;
                     document.getElementById('statTodayHours').textContent = `${todayHours}h ${todayMins}m`;
-                    
+
                     const monthHours = Math.floor(data.month_hours / 60);
                     const monthMins = data.month_hours % 60;
                     document.getElementById('statMonthHours').textContent = `${monthHours}h ${monthMins}m`;
-                    
+
                     // Update active list
                     const activeListBody = document.getElementById('activeListBody');
                     if (data.active_list && data.active_list.length > 0) {
@@ -238,12 +261,18 @@ $csrfToken = generateCSRFToken();
                                 <td class="px-4 py-3 text-sm text-gray-900">${escapeHtml(item.name)}</td>
                                 <td class="px-4 py-3 text-sm text-gray-500">${item.checkin_time.split(' ')[1].substring(0, 5)}</td>
                                 <td class="px-4 py-3 text-sm text-gray-500">${item.duration_so_far}</td>
+                                <td class="px-4 py-3">
+                                    <button onclick="forceCheckout(${item.user_id}, '${escapeHtml(item.name)}')"
+                                        class="px-3 py-1 text-xs font-medium rounded bg-orange-100 text-orange-700 hover:bg-orange-200 transition">
+                                        <?php echo t('force_checkout'); ?>
+                                    </button>
+                                </td>
                             </tr>
                         `).join('');
                     } else {
-                        activeListBody.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-gray-500">No active check-ins</td></tr>`;
+                        activeListBody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">No active check-ins</td></tr>`;
                     }
-                    
+
                     // Update recent activity
                     const recentActivityBody = document.getElementById('recentActivityBody');
                     if (data.recent_activity && data.recent_activity.length > 0) {
@@ -251,7 +280,7 @@ $csrfToken = generateCSRFToken();
                             const actionColor = item.action === 'checkin' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
                             const actionText = item.action === 'checkin' ? 'Check In' : 'Check Out';
                             const time = item.time.split(' ')[1].substring(0, 5);
-                            
+
                             return `
                                 <tr>
                                     <td class="px-4 py-3 text-sm text-gray-900">${escapeHtml(item.name)}</td>
@@ -281,15 +310,15 @@ $csrfToken = generateCSRFToken();
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             if (!container) return;
-            
+
             const toast = document.createElement('div');
             const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-            
+
             toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg mb-3 max-w-sm text-center`;
             toast.textContent = message;
-            
+
             container.appendChild(toast);
-            
+
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transition = 'opacity 0.3s ease-out';

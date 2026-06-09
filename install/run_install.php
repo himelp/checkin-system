@@ -21,6 +21,7 @@ if (file_exists(__DIR__ . '/installed.lock')) {
 $appName = trim($_POST['app_name'] ?? 'CheckTrack');
 $appUrl = trim($_POST['app_url'] ?? '');
 $lang = $_POST['lang'] ?? 'en';
+$timezone = trim($_POST['timezone'] ?? 'Europe/Rome');
 
 $dbHost = trim($_POST['db_host'] ?? 'localhost');
 $dbName = trim($_POST['db_name'] ?? '');
@@ -48,6 +49,11 @@ if (empty($adminName)) $errors[] = 'Admin name is required';
 if (empty($adminUser)) $errors[] = 'Admin username is required';
 if (strlen($adminPass) < 6) $errors[] = 'Admin password must be at least 6 characters';
 
+// Validate timezone
+if (!in_array($timezone, DateTimeZone::listIdentifiers())) {
+    $timezone = 'Europe/Rome';
+}
+
 if (!empty($errors)) {
     echo json_encode(['success' => false, 'message' => implode(', ', $errors)]);
     exit;
@@ -63,11 +69,11 @@ try {
     $pdo = new PDO($dsn, $dbUser, $dbPass, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
-    
+
     // Create database if not exists
     $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
     $pdo->exec("USE `{$dbName}`");
-    
+
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $e->getMessage()]);
     exit;
@@ -104,6 +110,10 @@ define('APP_NAME', '{$appName}');
 // Default language
 define('DEFAULT_LANG', '{$lang}');
 
+// Default Timezone
+define('DEFAULT_TIMEZONE', '{$timezone}');
+date_default_timezone_set(DEFAULT_TIMEZONE);
+
 // Developer Information
 define('DEV_NAME', '{$devName}');
 define('DEV_COMPANY', '{$devCompany}');
@@ -117,8 +127,8 @@ PHP;
 
 // Replace placeholders
 $configContent = str_replace(
-    ['{$dbHost}', '{$dbName}', '{$dbUser}', '{$dbPass}', '{$appUrl}', '{$appName}', '{$lang}', '{$devName}', '{$devCompany}', '{$devWebsite}', '{$devEmail}', '{$showDevFooter}'],
-    [$dbHost, $dbName, $dbUser, $dbPass, $appUrl, $appName, $lang, $devName, $devCompany, $devWebsite, $devEmail, $showDevFooter ? 'true' : 'false'],
+    ['{$dbHost}', '{$dbName}', '{$dbUser}', '{$dbPass}', '{$appUrl}', '{$appName}', '{$lang}', '{$timezone}', '{$devName}', '{$devCompany}', '{$devWebsite}', '{$devEmail}', '{$showDevFooter}'],
+    [$dbHost, $dbName, $dbUser, $dbPass, $appUrl, $appName, $lang, $timezone, $devName, $devCompany, $devWebsite, $devEmail, $showDevFooter ? 'true' : 'false'],
     $configContent
 );
 
@@ -161,8 +171,8 @@ $progress[] = ['step' => 4, 'message' => 'Creating admin account...'];
 
 // Create admin user with bcrypt password
 $hashedPassword = password_hash($adminPass, PASSWORD_BCRYPT);
-$stmt = $pdo->prepare("INSERT INTO users (name, username, password, role, lang, status) VALUES (?, ?, ?, 'admin', ?, 1)");
-$stmt->execute([$adminName, $adminUser, $hashedPassword, $lang]);
+$stmt = $pdo->prepare("INSERT INTO users (name, username, password, role, lang, timezone, status) VALUES (?, ?, ?, 'admin', ?, ?, 1)");
+$stmt->execute([$adminName, $adminUser, $hashedPassword, $lang, $timezone]);
 
 $progress[] = ['step' => 5, 'message' => 'Finalizing installation...'];
 

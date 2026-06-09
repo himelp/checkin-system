@@ -56,5 +56,14 @@
     "days_absent": "Giorni Assente",
     "weekly_comparison": "Confronto Settimanale",
     "hours": "Ore",
-    "login_subtitle": "Accedi al tuo account"
+    "login_subtitle": "Accedi al tuo account",
+    "profile": "Profilo",
+    "timezone": "Fuso Orario",
+    "change_password": "Cambia Password",
+    "current_password": "Password Attuale",
+    "new_password": "Nuova Password",
+    "confirm_password": "Conferma Password",
+    "save_changes": "Salva Modifiche",
+    "preferences": "Preferenze",
+    "force_checkout": "Forza Check Out"
 }

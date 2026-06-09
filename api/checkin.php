@@ -8,6 +8,11 @@ require_once __DIR__ . '/../includes/lang.php';
 require_once __DIR__ . '/../includes/sheets.php';
 require_once __DIR__ . '/../config.php';
 
+// Set user timezone
+if (isset($_SESSION['timezone'])) {
+    date_default_timezone_set($_SESSION['timezone']);
+}
+
 // Set content type
 header('Content-Type: application/json');
 

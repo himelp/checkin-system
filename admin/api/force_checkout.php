@@ -1,37 +1,35 @@
 <?php
 /**
- * Check-out API
+ * Force Checkout API — Admin only
  */
 
-require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../includes/lang.php';
-require_once __DIR__ . '/../includes/sheets.php';
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/lang.php';
+require_once __DIR__ . '/../../includes/sheets.php';
+require_once __DIR__ . '/../../config.php';
 
-// Set user timezone
-if (isset($_SESSION['timezone'])) {
-    date_default_timezone_set($_SESSION['timezone']);
-}
-
-// Set content type
 header('Content-Type: application/json');
 
-// Check if user is logged in
-if (!isLoggedIn()) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'message' => t('session_expired')]);
+// Check admin
+if (!isLoggedIn() || !isAdmin()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;
 }
 
-// Only accept POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
     exit;
+
 }
 
-$userId = $_SESSION['user_id'];
-$ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+$targetUserId = intval($_POST['user_id'] ?? 0);
+
+if ($targetUserId <= 0) {
+    echo json_encode(['success' => false, 'message' => 'Invalid user ID']);
+    exit;
+}
 
 $db = getDB();
 if (!$db) {
@@ -40,14 +38,27 @@ if (!$db) {
     exit;
 }
 
+// Get target user's timezone
+$stmt = $db->prepare("SELECT id, name, username, timezone FROM users WHERE id = ?");
+$stmt->execute([$targetUserId]);
+$targetUser = $stmt->fetch();
+
+if (!$targetUser) {
+    echo json_encode(['success' => false, 'message' => 'User not found']);
+    exit;
+}
+
+// Set user's timezone for accurate time calculation
+$userTimezone = $targetUser['timezone'] ?? 'UTC';
+date_default_timezone_set($userTimezone);
+
 // Find active check-in
 $stmt = $db->prepare("SELECT * FROM check_log WHERE user_id = ? AND status = 'active' ORDER BY checkin_time DESC LIMIT 1");
-$stmt->execute([$userId]);
+$stmt->execute([$targetUserId]);
 $checkin = $stmt->fetch();
 
 if (!$checkin) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'No active check-in found']);
+    echo json_encode(['success' => false, 'message' => 'No active check-in found for this user']);
     exit;
 }
 
@@ -67,15 +78,15 @@ if ($hours > 0) {
 $formattedDuration .= $minutes . 'min';
 
 // Update check-in record
-$stmt = $db->prepare("UPDATE check_log SET checkout_time = NOW(), duration_minutes = ?, status = 'done', ip_address = ? WHERE id = ?");
-$stmt->execute([$durationMinutes, $ip, $checkin['id']]);
+$stmt = $db->prepare("UPDATE check_log SET checkout_time = NOW(), duration_minutes = ?, status = 'done' WHERE id = ?");
+$stmt->execute([$durationMinutes, $checkin['id']]);
 
-// Send to Google Sheets (non-blocking, failures logged but not thrown)
+// Send to Google Sheets
 $sheetsData = [
     'action' => 'checkout',
     'row_id' => $checkin['id'],
-    'user_id' => $userId,
-    'name' => $_SESSION['name'],
+    'user_id' => $targetUserId,
+    'name' => $targetUser['name'],
     'checkin_time' => $checkin['checkin_time'],
     'checkout_time' => $checkoutTime->format('Y-m-d H:i:s'),
     'duration_minutes' => $durationMinutes,
@@ -88,7 +99,7 @@ sendToSheets('checkout', $sheetsData);
 
 echo json_encode([
     'success' => true,
-    'message' => t('success_checkout'),
+    'message' => 'Force checkout successful for ' . $targetUser['name'],
     'duration' => $formattedDuration,
     'duration_minutes' => $durationMinutes
 ]);

@@ -56,5 +56,14 @@
     "days_absent": "Days Absent",
     "weekly_comparison": "Weekly Comparison",
     "hours": "Hours",
-    "login_subtitle": "Sign in to your account"
+    "login_subtitle": "Sign in to your account",
+    "profile": "Profile",
+    "timezone": "Timezone",
+    "change_password": "Change Password",
+    "current_password": "Current Password",
+    "new_password": "New Password",
+    "confirm_password": "Confirm Password",
+    "save_changes": "Save Changes",
+    "preferences": "Preferences",
+    "force_checkout": "Force Checkout"
 }
