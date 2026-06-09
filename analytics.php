@@ -11,7 +11,10 @@ if (!file_exists(__DIR__ . '/install/installed.lock')) {
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/lang.php';
+require_once __DIR__ . '/includes/security.php';
 require_once __DIR__ . '/config.php';
+
+secureHeaders();
 
 // Redirect if not logged in
 if (!isLoggedIn()) {

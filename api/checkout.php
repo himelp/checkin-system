@@ -50,7 +50,7 @@ if (!$checkin) {
 $checkinTime = new DateTime($checkin['checkin_time']);
 $checkoutTime = new DateTime();
 $interval = $checkinTime->diff($checkoutTime);
-$durationMinutes = ($interval->h * 60) + $interval->i;
+$durationMinutes = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
 
 // Format duration
 $hours = floor($durationMinutes / 60);

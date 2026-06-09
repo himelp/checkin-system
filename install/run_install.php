@@ -110,6 +110,9 @@ define('DEV_COMPANY', '{$devCompany}');
 define('DEV_WEBSITE', '{$devWebsite}');
 define('DEV_EMAIL', '{$devEmail}');
 define('SHOW_DEV_FOOTER', {$showDevFooter});
+
+// Google Sheets Webhook Secret
+define('SHEETS_SECRET', 'checktrack-secret-2026');
 PHP;
 
 // Replace placeholders

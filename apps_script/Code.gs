@@ -95,7 +95,7 @@ function handleCheckin(data) {
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
     sheet.appendRow(HEADERS);
-    formatSheet();
+    formatSheet(sheet);
   }
   
   // Append row with checkin data
@@ -189,9 +189,11 @@ function handleGetStatus(data) {
 /**
  * Format the entire sheet
  */
-function formatSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
+function formatSheet(sheet) {
+  if (!sheet) {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    sheet = ss.getSheetByName(SHEET_NAME);
+  }
   
   if (!sheet) return;
   

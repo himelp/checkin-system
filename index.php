@@ -16,7 +16,7 @@ require_once __DIR__ . '/includes/security.php';
 require_once __DIR__ . '/config.php';
 
 secureHeaders();
-header('X-Frame-Options: SAMEORIGIN');
+header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 header('X-XSS-Protection: 1; mode=block');
 
@@ -40,6 +40,15 @@ $error = $_GET['error'] ?? '';
     <link rel="manifest" href="/manifest.json">
     <title><?php echo APP_NAME; ?> - <?php echo t('login'); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md">
@@ -49,30 +58,29 @@ $error = $_GET['error'] ?? '';
                 <p class="text-gray-500 mt-2"><?php echo t('login_subtitle'); ?></p>
             </div>
 
-            <?php if ($error): ?>
-                <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">
-                    <?php echo htmlspecialchars(t($error)); ?>
+            <div id="errorContainer" class="hidden">
+                <div class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm" id="errorMessage">
                 </div>
-            <?php endif; ?>
+            </div>
 
-            <form method="POST" action="api/login.php" class="space-y-6">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+            <form id="loginForm" class="space-y-6">
+                <input type="hidden" name="csrf_token" id="csrf_token" value="<?php echo $csrfToken; ?>">
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><?php echo t('username'); ?></label>
-                    <input type="text" name="username" required
+                    <input type="text" name="username" id="username" required
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                         placeholder="<?php echo t('username'); ?>">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2"><?php echo t('password'); ?></label>
-                    <input type="password" name="password" required
+                    <input type="password" name="password" id="password" required
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                         placeholder="<?php echo t('password'); ?>">
                 </div>
 
-                <button type="submit"
+                <button type="submit" id="loginBtn"
                     class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200">
                     <?php echo t('login'); ?>
                 </button>
@@ -86,5 +94,62 @@ $error = $_GET['error'] ?? '';
         </div>
         <?php endif; ?>
     </div>
+
+    <script>
+        // Show error from URL if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlError = urlParams.get('error');
+        if (urlError) {
+            const errorContainer = document.getElementById('errorContainer');
+            const errorMessage = document.getElementById('errorMessage');
+            errorContainer.classList.remove('hidden');
+            errorMessage.textContent = decodeURIComponent(urlError);
+        }
+
+        // Handle login form submission via fetch
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('loginBtn');
+            const errorContainer = document.getElementById('errorContainer');
+            const errorMessage = document.getElementById('errorMessage');
+            const originalText = btn.textContent;
+            
+            btn.disabled = true;
+            btn.textContent = '...';
+            errorContainer.classList.add('hidden');
+            
+            const formData = {
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value,
+                csrf_token: document.getElementById('csrf_token').value
+            };
+            
+            try {
+                const response = await fetch('api/login.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    window.location.href = data.redirect || 'dashboard.php';
+                } else {
+                    errorContainer.classList.remove('hidden');
+                    errorMessage.textContent = data.message || 'Login failed';
+                }
+            } catch (error) {
+                errorContainer.classList.remove('hidden');
+                errorMessage.textContent = 'Network error. Please try again.';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+    </script>
 </body>
 </html>
