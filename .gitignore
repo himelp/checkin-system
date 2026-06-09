@@ -1,3 +1,4 @@
 .aider*
 config.php
 install/installed.lock
+.env
