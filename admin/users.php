@@ -3,6 +3,8 @@
  * Admin Users Page
  */
 
+session_start();
+
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/lang.php';
 
@@ -115,7 +117,7 @@ if ($db) {
             <div class="p-6 border-b">
                 <h2 id="modalTitle" class="text-xl font-semibold">Add User</h2>
             </div>
-            <form id="userForm" class="p-6 space-y-4">
+            <form id="userForm" action="../api/create_user.php" method="POST" class="p-6 space-y-4">
                 <input type="hidden" id="userId" value="">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                 
@@ -213,19 +215,21 @@ if ($db) {
             
             const userId = document.getElementById('userId').value;
             const data = {
-                action: userId ? 'edit' : 'add',
-                user_id: userId,
                 name: document.getElementById('userName').value,
                 role: document.getElementById('userRole').value
             };
             
             if (!userId) {
+                data.action = 'add';
                 data.username = document.getElementById('userUsername').value;
                 data.password = document.getElementById('userPassword').value;
+            } else {
+                data.action = 'edit';
+                data.user_id = userId;
             }
             
             try {
-                const result = await postJSON('api/users.php', data);
+                const result = await postJSON('../api/create_user.php', data);
                 
                 if (result.success) {
                     showToast(result.message, 'success');
