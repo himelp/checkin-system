@@ -80,5 +80,15 @@
     "no_messages": "No messages",
     "message_sent": "Message sent successfully",
     "to": "To",
-    "from": "From"
+    "from": "From",
+    "update": "System Update",
+    "system_update": "System Update",
+    "check_updates": "Check for Updates",
+    "update_now": "Update Now",
+    "updating": "Updating",
+    "update_successful": "Update successful",
+    "update_failed": "Update failed",
+    "update_available": "Update available",
+    "system_up_to_date": "System is up to date",
+    "click_check_updates": "Click \"Check for Updates\" to check for available updates"
 }
