@@ -37,3 +37,9 @@ define('SHOW_DEV_FOOTER', true);
 
 // Google Sheets Webhook Secret
 define('SHEETS_SECRET', 'checktrack-secret-2026');
+
+// Version Management
+define('VERSION_CHECK_URL', 'https://raw.githubusercontent.com/himelp/checkin-system/master/version.txt');
+define('GITHUB_REPO_URL', 'https://github.com/himelp/checkin-system');
+define('UPDATE_DOWNLOAD_URL', 'https://github.com/himelp/checkin-system/archive/refs/heads/master.zip');
+?>

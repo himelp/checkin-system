@@ -13,6 +13,7 @@ if (!file_exists(__DIR__ . '/install/installed.lock')) {
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/lang.php';
 require_once __DIR__ . '/includes/security.php';
+require_once __DIR__ . '/includes/version.php';
 require_once __DIR__ . '/config.php';
 
 secureHeaders();
@@ -27,6 +28,11 @@ if (!isLoggedIn()) {
 }
 
 $csrfToken = generateCSRFToken();
+
+// Version checking
+$currentVersion = getCurrentVersion();
+$updateInfo = checkForUpdates($currentVersion);
+$hasUpdate = isset($updateInfo['update_available']) && $updateInfo['update_available'];
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $_SESSION['lang'] ?? DEFAULT_LANG; ?>">
@@ -76,6 +82,13 @@ $csrfToken = generateCSRFToken();
                 <a href="api/logout.php" class="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm font-medium hover:bg-red-200 min-h-[44px] flex items-center">
                     <?php echo t('logout'); ?>
                 </a>
+                <!-- Version Info -->
+                <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <span>v<?php echo $currentVersion; ?></span>
+                    <?php if ($hasUpdate): ?>
+                        <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">Update Available</span>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </nav>
