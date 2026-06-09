@@ -92,13 +92,18 @@ function handleSheetsUrl(&$configContent, $input) {
     $url = str_replace("'", "\\'", $url);
     
     // Replace GOOGLE_SCRIPT_WEBHOOK_URL definition
+    // Use a more specific regex to avoid matching comments or multiple definitions
     $pattern = "/define\s*\(\s*['\"]GOOGLE_SCRIPT_WEBHOOK_URL['\"]\s*,\s*['\"].*?['\"]\s*\)\s*;/";
     $replacement = "define('GOOGLE_SCRIPT_WEBHOOK_URL', '" . $url . "');";
     
-    $newContent = preg_replace($pattern, $replacement, $configContent);
+    $newContent = preg_replace($pattern, $replacement, $configContent, -1, $count);
     
-    if ($newContent === null || $newContent === $configContent) {
-        throw new Exception('Failed to update GOOGLE_SCRIPT_WEBHOOK_URL');
+    if ($newContent === null) {
+        throw new Exception('Failed to update GOOGLE_SCRIPT_WEBHOOK_URL (regex error)');
+    }
+    
+    if ($count === 0) {
+        throw new Exception('Failed to update GOOGLE_SCRIPT_WEBHOOK_URL (pattern not found)');
     }
     
     $configContent = $newContent;
@@ -141,11 +146,14 @@ function handleGeneralSettings(&$configContent, $input) {
         $appName = trim($input['app_name']);
         $appName = str_replace("'", "\\'", $appName);
         
-        $pattern = "/define\s*\(\s*['\"]APP_NAME['\"]\s*,\s*['\"].*?['\"]\s*\)\s*;/";
+        // Match the quote style used in the file (simple heuristic: check first occurrence of APP_NAME)
+        // Or just replace both styles if necessary, but safer to stick to one style or detect.
+        // For simplicity, we'll try to replace single-quoted defines first, then double-quoted.
+        $pattern = "/define\s*\(\s*'APP_NAME'\s*,\s*['\"].*?['\"]\s*\)\s*;/";
         $replacement = "define('APP_NAME', '" . $appName . "');";
         
-        $newContent = preg_replace($pattern, $replacement, $configContent);
-        if ($newContent !== null && $newContent !== $configContent) {
+        $newContent = preg_replace($pattern, $replacement, $configContent, -1, $count);
+        if ($newContent !== null && $count > 0) {
             $configContent = $newContent;
             $updates[] = 'APP_NAME';
         }
@@ -161,8 +169,8 @@ function handleGeneralSettings(&$configContent, $input) {
         $pattern = "/define\s*\(\s*['\"]SESSION_TIMEOUT['\"]\s*,\s*\d+\s*\)\s*;/";
         $replacement = "define('SESSION_TIMEOUT', " . $timeoutSeconds . ");";
         
-        $newContent = preg_replace($pattern, $replacement, $configContent);
-        if ($newContent !== null && $newContent !== $configContent) {
+        $newContent = preg_replace($pattern, $replacement, $configContent, -1, $count);
+        if ($newContent !== null && $count > 0) {
             $configContent = $newContent;
             $updates[] = 'SESSION_TIMEOUT';
         }
@@ -172,11 +180,11 @@ function handleGeneralSettings(&$configContent, $input) {
     if (isset($input['default_lang']) && in_array($input['default_lang'], ['en', 'it'])) {
         $lang = $input['default_lang'];
         
-        $pattern = "/define\s*\(\s*['\"]DEFAULT_LANG['\"]\s*,\s*['\"].*?['\"]\s*\)\s*;/";
+        $pattern = "/define\s*\(\s*'DEFAULT_LANG'\s*,\s*['\"].*?['\"]\s*\)\s*;/";
         $replacement = "define('DEFAULT_LANG', '" . $lang . "');";
         
-        $newContent = preg_replace($pattern, $replacement, $configContent);
-        if ($newContent !== null && $newContent !== $configContent) {
+        $newContent = preg_replace($pattern, $replacement, $configContent, -1, $count);
+        if ($newContent !== null && $count > 0) {
             $configContent = $newContent;
             $updates[] = 'DEFAULT_LANG';
         }

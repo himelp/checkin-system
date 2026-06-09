@@ -100,10 +100,15 @@ function sendWebhookRequest($payload) {
  * @return array Test result
  */
 function testSheetsConnection() {
+    // Build URL correctly to avoid duplicate query params
+    $url = GOOGLE_SCRIPT_WEBHOOK_URL;
+    $separator = (strpos($url, '?') === false) ? '?' : '&';
+    $url .= $separator . 'action=ping';
+    
     $ch = curl_init();
     
     curl_setopt_array($ch, [
-        CURLOPT_URL => GOOGLE_SCRIPT_WEBHOOK_URL . '?action=ping',
+        CURLOPT_URL => $url,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 10,
         CURLOPT_CONNECTTIMEOUT => 5,

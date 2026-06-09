@@ -10,11 +10,20 @@ function startTimer(checkinTime) {
     const timerElement = document.getElementById('timer');
     if (!timerElement) return;
     
-    const startTime = new Date(checkinTime).getTime();
+    const startTime = new Date(checkinTime);
+    
+    // Validate date
+    if (isNaN(startTime.getTime())) {
+        console.error('Invalid checkinTime:', checkinTime);
+        timerElement.textContent = '00:00:00';
+        return;
+    }
+    
+    const startTimestamp = startTime.getTime();
     
     function updateTimer() {
         const now = Date.now();
-        const diff = now - startTime;
+        const diff = now - startTimestamp;
         
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
