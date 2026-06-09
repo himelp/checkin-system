@@ -43,12 +43,12 @@ try {
     if ($configContent === false) {
         throw new Exception('Failed to read config file');
     }
-    
+
     // Create backup before modifying
     if (!copy($configFile, $backupFile)) {
         throw new Exception('Failed to create backup');
     }
-    
+
     switch ($action) {
         case 'sheets_url':
             handleSheetsUrl($configContent, $input);
@@ -59,7 +59,7 @@ try {
         default:
             throw new Exception('Unknown action: ' . $action);
     }
-    
+
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
@@ -75,50 +75,50 @@ function handleSheetsUrl(&$configContent, $input) {
     if (!isset($input['url']) || empty($input['url'])) {
         throw new Exception('URL is required');
     }
-    
+
     $url = trim($input['url']);
-    
+
     // Validate URL format
     if (strpos($url, 'script.google.com') === false) {
         throw new Exception('Invalid URL: Must be a Google Apps Script URL');
     }
-    
+
     // Validate URL is properly formed
     if (!filter_var($url, FILTER_VALIDATE_URL)) {
         throw new Exception('Invalid URL format');
     }
-    
+
     // Escape single quotes for PHP string
     $url = str_replace("'", "\\'", $url);
-    
+
     // Replace GOOGLE_SCRIPT_WEBHOOK_URL definition
     // Use a more specific regex to avoid matching comment or multiple definitions
     $pattern = "/define\s*\(\s*['\"]GOOGLE_SCRIPT_WEBHOOK_URL['\"]\s*,\s*['\"].*?['\"]\s*\)\s*;/";
     $replacement = "define('GOOGLE_SCRIPT_WEBHOOK_URL', '" . $url . "');";
-    
+
     $newContent = preg_replace($pattern, $replacement, $configContent, -1, $count);
-    
+
     if ($newContent === null) {
         throw new Exception('Failed to update GOOGLE_SCRIPT_WEBHOOK_URL (regex error)');
     }
-    
+
     if ($count === 0) {
         throw new Exception('Failed to update GOOGLE_SCRIPT_WEBHOOK_URL (pattern not found)');
     }
-    
+
     $configContent = $newContent;
-    
+
     // Write updated config
     if (file_put_contents(__DIR__ . '/../config.php', $configContent) === false) {
         // Restore backup on failure
         copy(__DIR__ . '/../config.php.bak', __DIR__ . '/../config.php');
         throw new Exception('Failed to write config file');
     }
-    
+
     // Test the connection
     require_once __DIR__ . '/../includes/sheets.php';
     $testResult = testSheetsConnection();
-    
+
     if ($testResult['success']) {
         echo json_encode([
             'success' => true,
@@ -140,67 +140,71 @@ function handleSheetsUrl(&$configContent, $input) {
  */
 function handleGeneralSettings(&$configContent, $input) {
     $updates = [];
-    
+
     // Update APP_NAME
     if (isset($input['app_name']) && !empty(trim($input['app_name']))) {
         $appName = trim($input['app_name']);
-        $appName = str_replace("'", "\\'", $appName);
-        
-        // Match the quote style used in the file (simple heuristic: check first occurrence of APP_NAME)
-        // Or just replace both styles if necessary, but safer to stick to one style or detect.
-        // For simplicity, we'll try to replace single-quoted defines first, then double-quoted.
+
+        // Validate: no newlines, no PHP tags, no null bytes
+        if (preg_match('/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]|<\?|<%|<%=/', $appName)) {
+            throw new Exception('Invalid characters in app name');
+        }
+
+        // Proper escape: all quotes and backslashes
+        $appName = addcslashes($appName, "'\\");
+
         $pattern = "/define\s*\(\s*'APP_NAME'\s*,\s*['\"].*?['\"]\s*\)\s*;/";
         $replacement = "define('APP_NAME', '" . $appName . "');";
-        
+
         $newContent = preg_replace($pattern, $replacement, $configContent, -1, $count);
         if ($newContent !== null && $count > 0) {
             $configContent = $newContent;
             $updates[] = 'APP_NAME';
         }
     }
-    
+
     // Update SESSION_TIMEOUT
     if (isset($input['session_timeout'])) {
         $timeout = intval($input['session_timeout']);
         if ($timeout < 5) $timeout = 5;
         if ($timeout > 1440) $timeout = 1440;
         $timeoutSeconds = $timeout * 60;
-        
+
         $pattern = "/define\s*\(\s*['\"]SESSION_TIMEOUT['\"]\s*,\s*\d+\s*\)\s*;/";
         $replacement = "define('SESSION_TIMEOUT', " . $timeoutSeconds . ");";
-        
+
         $newContent = preg_replace($pattern, $replacement, $configContent, -1, $count);
         if ($newContent !== null && $count > 0) {
             $configContent = $newContent;
             $updates[] = 'SESSION_TIMEOUT';
         }
     }
-    
+
     // Update DEFAULT_LANG
     if (isset($input['default_lang']) && in_array($input['default_lang'], ['en', 'it'])) {
         $lang = $input['default_lang'];
-        
+
         $pattern = "/define\s*\(\s*'DEFAULT_LANG'\s*,\s*['\"].*?['\"]\s*\)\s*;/";
         $replacement = "define('DEFAULT_LANG', '" . $lang . "');";
-        
+
         $newContent = preg_replace($pattern, $replacement, $configContent, -1, $count);
         if ($newContent !== null && $count > 0) {
             $configContent = $newContent;
             $updates[] = 'DEFAULT_LANG';
         }
     }
-    
+
     if (empty($updates)) {
         throw new Exception('No valid settings to update');
     }
-    
+
     // Write updated config
     if (file_put_contents(__DIR__ . '/../config.php', $configContent) === false) {
         // Restore backup on failure
         copy(__DIR__ . '/../config.php.bak', __DIR__ . '/../config.php');
         throw new Exception('Failed to write config file');
     }
-    
+
     echo json_encode([
         'success' => true,
         'message' => 'Settings updated: ' . implode(', ', $updates),

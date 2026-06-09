@@ -1,63 +1,92 @@
 <?php
-// api/create_user.php
+/**
+ * Create User API
+ */
+
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/security.php';
 
 header('Content-Type: application/json');
-session_start(); // Ensure session is started for authentication checks
 
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/security.php'; // For sanitizeInput
-
-// --- Authorization Check ---
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
-    http_response_code(403); // Forbidden
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access. Only admins can create users.']);
-    exit();
+// Check admin (use 'role' not 'user_role')
+if (!isLoggedIn() || !isAdmin()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized. Admin access required.']);
+    exit;
 }
 
-// --- Input Handling ---
+// Only accept POST
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    exit;
+}
+
+// Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 
-if (json_last_error() !== JSON_ERROR_NONE) {
-    http_response_code(400); // Bad Request
-    echo json_encode(['success' => false, 'message' => 'Invalid JSON input.']);
-    exit();
-}
-
 $username = sanitizeInput($input['username'] ?? '');
-$password = $input['password'] ?? ''; // Don't sanitize password before hashing
-$fullName = sanitizeInput($input['full_name'] ?? '');
-$role = sanitizeInput($input['role'] ?? 'employee'); // Default to employee
+$password = $input['password'] ?? '';
+$name = sanitizeInput($input['name'] ?? '');
+$role = sanitizeInput($input['role'] ?? 'user');
 
-// --- Validation ---
-if (empty($username) || empty($password) || empty($fullName)) {
+// Validation
+if (empty($username) || empty($password) || empty($name)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Username, password, and full name are required.']);
-    exit();
+    echo json_encode(['success' => false, 'message' => 'Username, password, and name are required']);
+    exit;
 }
 
-// Basic password strength (example)
-if (strlen($password) < 8) {
+if (strlen($username) < 3 || strlen($username) > 100) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Password must be at least 8 characters long.']);
-    exit();
+    echo json_encode(['success' => false, 'message' => 'Username must be 3-100 characters']);
+    exit;
 }
 
-// Validate role (only allow specific roles)
-$allowedRoles = ['employee', 'admin'];
-if (!in_array($role, $allowedRoles)) {
+if (strlen($password) < 6) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Invalid role specified.']);
-    exit();
+    echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters']);
+    exit;
 }
 
-// --- User Creation ---
+if (!in_array($role, ['user', 'admin'])) {
+    $role = 'user';
+}
+
+$db = getDB();
+if (!$db) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database error']);
+    exit;
+}
+
+// Check username exists
+$stmt = $db->prepare("SELECT id FROM users WHERE username = ?");
+$stmt->execute([$username]);
+if ($stmt->fetch()) {
+    http_response_code(409);
+    echo json_encode(['success' => false, 'message' => 'Username already exists']);
+    exit;
+}
+
+// Create user
+$hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+$defaultLang = defined('DEFAULT_LANG') ? DEFAULT_LANG : 'en';
+$defaultTimezone = defined('DEFAULT_TIMEZONE') ? DEFAULT_TIMEZONE : 'UTC';
+
+$stmt = $db->prepare("INSERT INTO users (name, username, password, role, lang, timezone, status) VALUES (?, ?, ?, ?, ?, ?, 1)");
+
 try {
-    $newUserId = createUser($username, $password, $fullName, $role);
-    echo json_encode(['success' => true, 'message' => 'User created successfully.', 'user_id' => $newUserId]);
-} catch (Exception $e) {
-    http_response_code(500); // Internal Server Error
-    // Log the detailed error for debugging
-    error_log("User creation failed: " . $e->getMessage());
-    // Provide a generic error message to the client
-    echo json_encode(['success' => false, 'message' => 'Failed to create user. Please try again later.']);
+    $stmt->execute([$name, $username, $hashedPassword, $role, $defaultLang, $defaultTimezone]);
+    $newUserId = $db->lastInsertId();
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'User created successfully',
+        'user_id' => $newUserId
+    ]);
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Failed to create user']);
 }

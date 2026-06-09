@@ -144,10 +144,12 @@ function loginUser($username, $password) {
     startSecureSession();
     session_regenerate_id(true);
 
+    // Set ALL session variables
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['name'] = $user['name'];
     $_SESSION['username'] = $user['username'];
     $_SESSION['role'] = $user['role'];
+    $_SESSION['user_role'] = $user['role']; // COMPATIBILITY: for old code using user_role
     $_SESSION['lang'] = $user['lang'];
     $_SESSION['timezone'] = $user['timezone'];
     $_SESSION['last_activity'] = time();

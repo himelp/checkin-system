@@ -2,41 +2,54 @@
  * CheckTrack Application JavaScript
  */
 
-/**
- * Start a live timer from a given check-in time
- * @param {string} checkinTime - MySQL datetime string
- */
+// ADD AT TOP of app.js
+let activeTimerInterval = null;
+
 function startTimer(checkinTime) {
     const timerElement = document.getElementById('timer');
     if (!timerElement) return;
-    
+
+    // Clear any existing timer first
+    if (activeTimerInterval) {
+        clearInterval(activeTimerInterval);
+        activeTimerInterval = null;
+    }
+
     const startTime = new Date(checkinTime);
-    
-    // Validate date
+
     if (isNaN(startTime.getTime())) {
         console.error('Invalid checkinTime:', checkinTime);
         timerElement.textContent = '00:00:00';
         return;
     }
-    
+
     const startTimestamp = startTime.getTime();
-    
+
     function updateTimer() {
         const now = Date.now();
-        const diff = now - startTimestamp;
-        
+        const diff = Math.max(0, now - startTimestamp);
+
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-        
-        timerElement.textContent = 
+
+        timerElement.textContent =
             String(hours).padStart(2, '0') + ':' +
             String(minutes).padStart(2, '0') + ':' +
             String(seconds).padStart(2, '0');
     }
-    
+
     updateTimer();
-    return setInterval(updateTimer, 1000);
+    activeTimerInterval = setInterval(updateTimer, 1000);
+    return activeTimerInterval;
+}
+
+// ADD cleanup function
+function stopTimer() {
+    if (activeTimerInterval) {
+        clearInterval(activeTimerInterval);
+        activeTimerInterval = null;
+    }
 }
 
 /**
@@ -47,15 +60,15 @@ function startTimer(checkinTime) {
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
-    
+
     const toast = document.createElement('div');
     const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-    
+
     toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg mb-3 max-w-sm text-center`;
     toast.textContent = message;
-    
+
     container.appendChild(toast);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
         toast.style.opacity = '0';
@@ -72,7 +85,7 @@ function showToast(message, type = 'success') {
  */
 async function postJSON(url, data) {
     const csrfToken = document.querySelector('input[name="csrf_token"]')?.value || '';
-    
+
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -81,6 +94,6 @@ async function postJSON(url, data) {
         },
         body: JSON.stringify(data)
     });
-    
+
     return response.json();
 }

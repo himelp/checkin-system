@@ -44,6 +44,14 @@ if (empty($username) || empty($password)) {
     exit;
 }
 
+// ADD: Rate limit check
+$ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+if (!checkRateLimit($ip)) {
+    http_response_code(429); // Too Many Requests
+    echo json_encode(['success' => false, 'message' => 'Too many attempts. Please try again later.']);
+    exit;
+}
+
 // Attempt login
 $result = loginUser($username, $password);
 

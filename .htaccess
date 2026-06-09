@@ -1,16 +1,44 @@
-# Force HTTPS redirect
+# ============================================
+# CheckTrack - Complete .htaccess
+# ============================================
+
+# --- SINGLE RewriteEngine ON (must be first) ---
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /
+
+    # === 1. SKIP valid files/directories early ===
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # === 2. ALLOW specific valid paths (prevent redirect loop) ===
+    # Login page, index, API, assets, install — let them through
+    RewriteCond %{REQUEST_URI} ^/login\.php$ [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/index\.php$ [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/api/ [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/assets/ [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/install/ [NC,OR]
+    RewriteCond %{REQUEST_URI} ^/lang/ [NC,OR]
+    RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json)$ [NC]
+    RewriteRule ^ - [L]
+
+    # === 3. REDIRECT all invalid URLs to login ===
+    # This catches: /abcd123, /wp-admin, /random, /page.php?id=../../../etc/passwd, etc.
+    RewriteCond %{REQUEST_URI} !^/login\.php$ [NC]
+    RewriteRule ^(.*)$ /login.php [L,R=302]
+
+    # === 4. HTTPS FORCE (after valid request check) ===
     RewriteCond %{HTTPS} off
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # === 5. BLOCK sensitive paths → redirect to login (honeypot) ===
+    RewriteCond %{REQUEST_URI} ^/(includes|\.git)/ [NC,OR]
+    RewriteCond %{REQUEST_URI} (wp-admin|wp-login|phpmyadmin|adminer|xmlrpc\.php|\.env|config\.php) [NC]
+    RewriteRule ^(.*)$ /login.php [L,R=302]
 </IfModule>
 
-# Block includes/ install/ .git/ folders
-<IfModule mod_rewrite.c>
-    RewriteRule ^(includes|install|\.git)/ - [F,L]
-</IfModule>
-
-# Block .env .bak .sql files
+# --- Block .env .bak .sql files ---
 <FilesMatch "\.(env|bak|sql)$">
     <IfModule mod_authz_core.c>
         Require all denied
@@ -20,7 +48,7 @@
     </IfModule>
 </FilesMatch>
 
-# Security headers
+# --- Security headers ---
 <IfModule mod_headers.c>
     Header set X-Frame-Options "DENY"
     Header set X-XSS-Protection "1; mode=block"
@@ -28,12 +56,12 @@
     Header set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
-# GZIP compression
+# --- GZIP compression ---
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
 </IfModule>
 
-# Browser caching CSS/JS/images 1 month
+# --- Browser caching ---
 <IfModule mod_expires.c>
     ExpiresActive On
     ExpiresByType text/css "access plus 1 month"
@@ -44,8 +72,8 @@
     ExpiresByType image/svg+xml "access plus 1 month"
 </IfModule>
 
-# Prevent directory listing
+# --- Prevent directory listing ---
 Options -Indexes
 
-# Hide server signature
+# --- Hide server signature ---
 ServerSignature Off

@@ -1,3 +1,2 @@
-// fixed
 User-agent: *
 Disallow: /
