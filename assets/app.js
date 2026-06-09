@@ -103,15 +103,13 @@ async function postJSON(url, data) {
  */
 class VersionChecker {
     constructor() {
-        this.currentVersion = '<?php echo $currentVersion; ?>';
-        this.hasUpdate = <?php echo $hasUpdate ? 'true' : 'false'; ?>;
+        this.currentVersion = '';
+        this.hasUpdate = false;
         this.init();
     }
 
-    init() {
-        if (this.hasUpdate) {
-            this.showUpdateNotification();
-        }
+    async init() {
+        await this.checkForUpdates();
         this.bindEvents();
     }
 
@@ -119,7 +117,7 @@ class VersionChecker {
         // Add click handler for update notification
         document.addEventListener('click', (e) => {
             if (e.target.closest('#updateNotification')) {
-                this.checkForUpdates();
+                this.showUpdateDialog();
             }
         });
     }
@@ -129,18 +127,24 @@ class VersionChecker {
             const response = await fetch('api/check_version.php');
             const data = await response.json();
             
-            if (data.success && data.data.update_available) {
-                this.showUpdateDialog(data.data);
-            } else {
-                showToast('You are using the latest version', 'success');
+            if (data.success) {
+                this.currentVersion = data.data.current_version;
+                this.hasUpdate = data.data.update_available;
+                
+                if (this.hasUpdate) {
+                    this.showUpdateNotification();
+                }
             }
         } catch (error) {
             console.error('Version check failed:', error);
-            showToast('Failed to check for updates', 'error');
         }
     }
 
     showUpdateNotification() {
+        // Remove existing notification if any
+        const existing = document.getElementById('updateNotification');
+        if (existing) existing.remove();
+
         const notification = document.createElement('div');
         notification.id = 'updateNotification';
         notification.className = 'fixed top-20 right-4 bg-yellow-500 text-white p-4 rounded-lg shadow-lg z-50 cursor-pointer';
@@ -151,19 +155,19 @@ class VersionChecker {
                 </svg>
                 <span class="font-medium">Update Available!</span>
             </div>
-            <p class="text-sm mt-1">Click to check for updates</p>
+            <p class="text-sm mt-1">Click to view details</p>
         `;
         document.body.appendChild(notification);
     }
 
-    showUpdateDialog(updateInfo) {
+    showUpdateDialog() {
         const dialog = document.createElement('div');
         dialog.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
         dialog.innerHTML = `
             <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
                 <h3 class="text-lg font-bold mb-4">Update Available</h3>
-                <p class="mb-2">Current Version: ${updateInfo.current_version}</p>
-                <p class="mb-4">Latest Version: ${updateInfo.latest_version}</p>
+                <p class="mb-2">Current Version: ${this.currentVersion}</p>
+                <p class="mb-4">Latest Version: ${this.latestVersion || 'Checking...'}</p>
                 <div class="flex gap-2">
                     <button id="downloadUpdate" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Download Update</button>
                     <button id="closeDialog" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Close</button>
