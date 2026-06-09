@@ -16,6 +16,9 @@ require_once __DIR__ . '/includes/security.php';
 require_once __DIR__ . '/config.php';
 
 secureHeaders();
+header('X-Frame-Options: SAMEORIGIN');
+header('X-Content-Type-Options: nosniff');
+header('X-XSS-Protection: 1; mode=block');
 
 // Redirect if already logged in
 if (isLoggedIn()) {

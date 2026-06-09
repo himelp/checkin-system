@@ -216,6 +216,7 @@ $autoUrl = $protocol . '://' . $host . ($path !== '/' ? $path : '');
     <script>
         let dbConnected = false;
         let currentStep = 1;
+        let isInstalling = false;
 
         function updateProgress(step) {
             // Update dots
@@ -343,6 +344,9 @@ $autoUrl = $protocol . '://' . $host . ($path !== '/' ? $path : '');
         }
 
         async function startInstallation() {
+            if (isInstalling) return;
+            isInstalling = true;
+            
             showStep(5);
             
             const progressBar = document.getElementById('progress-bar');
@@ -405,6 +409,8 @@ $autoUrl = $protocol . '://' . $host . ($path !== '/' ? $path : '');
                 clearInterval(progressInterval);
                 progressText.textContent = 'Installation failed';
                 installLog.innerHTML = `<p style="color: #ef4444;">✗ Network error</p>`;
+            } finally {
+                isInstalling = false;
             }
         }
     </script>
