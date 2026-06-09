@@ -65,58 +65,57 @@ if ($action === 'edit') {
 }
 
 // Handle add action (default)
-$username = sanitizeInput($input['username'] ?? '');
-$password = $input['password'] ?? '';
-$name = sanitizeInput($input['name'] ?? '');
-$role = sanitizeInput($input['role'] ?? 'user');
-
-// Validation
-if (empty($username) || empty($password) || empty($name)) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Username, password, and name are required']);
-    exit;
-}
-
-if (strlen($username) < 3 || strlen($username) > 100) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Username must be 3-100 characters']);
-    exit;
-}
-
-if (strlen($password) < 6) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters']);
-    exit;
-}
-
-if (!in_array($role, ['user', 'admin'])) {
-    $role = 'user';
-}
-
-$db = getDB();
-if (!$db) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'Database error']);
-    exit;
-}
-
-// Check username exists
-$stmt = $db->prepare("SELECT id FROM users WHERE username = ?");
-$stmt->execute([$username]);
-if ($stmt->fetch()) {
-    http_response_code(409);
-    echo json_encode(['success' => false, 'message' => 'Username already exists']);
-    exit;
-}
-
-// Create user
-$hashedPassword = password_hash($password, PASSWORD_BCRYPT);
-$defaultLang = defined('DEFAULT_LANG') ? DEFAULT_LANG : 'en';
-$defaultTimezone = defined('DEFAULT_TIMEZONE') ? DEFAULT_TIMEZONE : 'UTC';
-
-$stmt = $db->prepare("INSERT INTO users (name, username, password, role, lang, timezone, status) VALUES (?, ?, ?, ?, ?, ?, 1)");
-
 try {
+    $username = sanitizeInput($input['username'] ?? '');
+    $password = $input['password'] ?? '';
+    $name = sanitizeInput($input['name'] ?? '');
+    $role = sanitizeInput($input['role'] ?? 'user');
+
+    // Validation
+    if (empty($username) || empty($password) || empty($name)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Username, password, and name are required']);
+        exit;
+    }
+
+    if (strlen($username) < 3 || strlen($username) > 100) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Username must be 3-100 characters']);
+        exit;
+    }
+
+    if (strlen($password) < 6) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters']);
+        exit;
+    }
+
+    if (!in_array($role, ['user', 'admin'])) {
+        $role = 'user';
+    }
+
+    $db = getDB();
+    if (!$db) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database error']);
+        exit;
+    }
+
+    // Check username exists
+    $stmt = $db->prepare("SELECT id FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    if ($stmt->fetch()) {
+        http_response_code(409);
+        echo json_encode(['success' => false, 'message' => 'Username already exists']);
+        exit;
+    }
+
+    // Create user
+    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+    $defaultLang = defined('DEFAULT_LANG') ? DEFAULT_LANG : 'en';
+    $defaultTimezone = defined('DEFAULT_TIMEZONE') ? DEFAULT_TIMEZONE : 'UTC';
+
+    $stmt = $db->prepare("INSERT INTO users (name, username, password, role, lang, timezone, status) VALUES (?, ?, ?, ?, ?, ?, 1)");
     $stmt->execute([$name, $username, $hashedPassword, $role, $defaultLang, $defaultTimezone]);
     $newUserId = $db->lastInsertId();
 
@@ -133,4 +132,7 @@ try {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Failed to create user']);
     }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'An unexpected error occurred']);
 }
