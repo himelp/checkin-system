@@ -67,10 +67,16 @@ $stmt->execute([$durationMinutes, $ip, $checkin['id']]);
 
 // Send to Google Sheets (non-blocking, failures logged but not thrown)
 $sheetsData = [
+    'action' => 'checkout',
     'row_id' => $checkin['id'],
+    'user_id' => $userId,
+    'name' => $_SESSION['name'],
+    'checkin_time' => $checkin['checkin_time'],
     'checkout_time' => $checkoutTime->format('Y-m-d H:i:s'),
     'duration_minutes' => $durationMinutes,
-    'duration_formatted' => $formattedDuration
+    'duration_formatted' => $formattedDuration,
+    'date' => $checkin['date'],
+    'secret' => defined('SHEETS_SECRET') ? SHEETS_SECRET : 'checktrack-secret-2026'
 ];
 
 sendToSheets('checkout', $sheetsData);

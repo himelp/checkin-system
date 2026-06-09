@@ -33,3 +33,6 @@ define('DEV_COMPANY', 'Beenet IT Solutions');
 define('DEV_WEBSITE', 'https://minhazbinsanto.com');
 define('DEV_EMAIL', 'contact@minhazbinsanto.com');
 define('SHOW_DEV_FOOTER', true);
+
+// Google Sheets Webhook Secret
+define('SHEETS_SECRET', 'checktrack-secret-2026');

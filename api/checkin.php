@@ -55,12 +55,15 @@ $checkinId = $db->lastInsertId();
 
 // Send to Google Sheets (non-blocking, failures logged but not thrown)
 $sheetsData = [
+    'action' => 'checkin',
     'row_id' => $checkinId,
+    'user_id' => $userId,
     'name' => $_SESSION['name'],
     'username' => $_SESSION['username'],
     'date' => $date,
     'checkin_time' => $now,
-    'ip' => $ip
+    'ip' => $ip,
+    'secret' => defined('SHEETS_SECRET') ? SHEETS_SECRET : 'checktrack-secret-2026'
 ];
 
 sendToSheets('checkin', $sheetsData);

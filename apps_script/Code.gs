@@ -6,6 +6,7 @@
 // Constants
 const SHEET_NAME = "CheckLog";
 const ADMIN_EMAIL = "contact@minhazbinsanto.com";
+const WEBHOOK_SECRET = "checktrack-secret-2026";
 const HEADERS = ["ID", "Name", "Username", "Date", "CheckIn_Time", "CheckOut_Time", "Duration_Min", "Duration_Formatted", "Status", "IP"];
 
 /**
@@ -14,6 +15,15 @@ const HEADERS = ["ID", "Name", "Username", "Date", "CheckIn_Time", "CheckOut_Tim
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
+    
+    // Verify secret token
+    if (!data.secret || data.secret !== WEBHOOK_SECRET) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        message: "Unauthorized: Invalid secret token"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
     const action = data.action;
     
     let result;
@@ -53,7 +63,15 @@ function doGet(e) {
   
   switch (action) {
     case "ping":
-      result = { success: true, message: "CheckTrack connected", timestamp: new Date().toISOString() };
+      const ss = SpreadsheetApp.getActiveSpreadsheet();
+      const sheet = ss.getSheetByName(SHEET_NAME);
+      result = { 
+        success: true, 
+        message: "CheckTrack connected", 
+        timestamp: new Date().toISOString(),
+        sheet_exists: sheet !== null,
+        headers_count: HEADERS.length
+      };
       break;
     case "test":
       result = handleTest();
@@ -200,15 +218,14 @@ function formatSheet() {
 /**
  * Format a single row based on status
  */
-function formatRow(sheet, row, status) {
-  const rowRange = sheet.getRange(row, 1, 1, HEADERS.length);
-  
+function formatRow(sheet, rowNumber, status) {
+  const range = sheet.getRange(rowNumber, 1, 1, HEADERS.length);
   if (status === "Active") {
-    rowRange.setBackground("#fff9c4");
+    range.setBackground("#fff9c4");
   } else if (status === "Done") {
-    rowRange.setBackground("#e8f5e9");
+    range.setBackground("#e8f5e9");
   } else {
-    rowRange.setBackground("#ffffff");
+    range.setBackground("#ffffff");
   }
 }
 
@@ -228,15 +245,19 @@ function sendDailySummary() {
   const dataRange = sheet.getDataRange();
   const values = dataRange.getValues();
   
+  // Handle case where sheet has no data rows (only header or empty)
+  if (values.length <= 1) {
+    Logger.log("No data rows found in sheet");
+    return;
+  }
+  
   let totalCheckins = 0;
   let totalMinutes = 0;
   const activeUsers = [];
   
   for (let i = 1; i < values.length; i++) {
     const rowDate = values[i][3]; // Date column (index 3)
-    const dateStr = rowDate instanceof Date ? 
-      Utilities.formatDate(rowDate, Session.getScriptTimeZone(), "yyyy-MM-dd") : 
-      String(rowDate).split(" ")[0];
+    const dateStr = Utilities.formatDate(new Date(rowDate), Session.getScriptTimeZone(), "yyyy-MM-dd");
     
     if (dateStr === today) {
       totalCheckins++;
