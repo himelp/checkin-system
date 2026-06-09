@@ -17,11 +17,18 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Get input
-$input = json_decode(file_get_contents('php://input'), true);
-
-$username = trim($input['username'] ?? '');
-$password = $input['password'] ?? '';
-$csrfToken = $input['csrf_token'] ?? '';
+// Accept both JSON and HTML form POST
+$contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+if (strpos($contentType, 'application/json') !== false) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $username = trim($input['username'] ?? '');
+    $password = $input['password'] ?? '';
+    $csrfToken = $input['csrf_token'] ?? '';
+} else {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $csrfToken = $_POST['csrf_token'] ?? '';
+}
 
 // Verify CSRF token
 if (!verifyCSRFToken($csrfToken)) {
